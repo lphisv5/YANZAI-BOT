@@ -1,21 +1,21 @@
 {
   "version": 2,
   "functions": {
-    "api/chat.js": {
+    "API/chat.js": {
       "maxDuration": 120,
       "memory": 2048
     }
   },
   "routes": [
     {
-      "src": "/api/chat",
-      "dest": "/api/chat.js",
+      "src": "/API/chat",
+      "dest": "/API/chat.js",
       "methods": ["GET", "OPTIONS"]
     }
   ],
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/API/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
