@@ -1,17 +1,24 @@
-// api/chat.js
 const SUPPORTED_MODELS = {
-  'elephant-alpha': { id: 'openrouter/elephant-alpha' },
-  'llama-3.3-70b': { id: 'meta-llama/llama-3.3-70b-instruct:free' },
-  'gemma-4-31b': { id: 'google/gemma-4-31b-it:free' },
-  'nemotron-3-super': { id: 'nvidia/nemotron-3-super-120b-a12b:free' },
-  'gpt-oss-120b': { id: 'openai/gpt-oss-120b:free' },
-  'qwen-3.6-plus': { id: 'qwen/qwen3.6-plus-preview:free' },
-  'auto-free': { id: 'openrouter/free' }
+  'elephant-alpha': { id: 'openrouter/elephant-alpha', provider: 'openrouter' },
+  'llama-3.3-70b': { id: 'meta-llama/llama-3.3-70b-instruct:free', provider: 'openrouter' },
+  'gemma-4-31b': { id: 'google/gemma-4-31b-it:free', provider: 'openrouter' },
+  'nemotron-3-super': { id: 'nvidia/nemotron-3-super-120b-a12b:free', provider: 'openrouter' },
+  'gpt-oss-120b': { id: 'openai/gpt-oss-120b:free', provider: 'openrouter' },
+  'qwen-3.6-plus': { id: 'qwen/qwen3.6-plus-preview:free', provider: 'openrouter' },
+  'auto-free': { id: 'openrouter/free', provider: 'openrouter' },
+  
+  'llama-groq': { id: 'llama-3.3-70b-versatile', provider: 'groq' },
+  'mixtral-groq': { id: 'mixtral-8x7b-32768', provider: 'groq' },
+  'gemma-groq': { id: 'gemma2-9b-it', provider: 'groq' },
+  'llama-3.1-groq': { id: 'llama-3.1-70b-versatile', provider: 'groq' }
 };
 
 const DEFAULT_MODEL = 'auto-free';
 const DEFAULT_SYSTEM_PROMPT = 'You are a helpful AI assistant. Answer clearly, accurately, and politely. Respond in the same language as the user. Provide detailed, high-quality responses.';
+
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
 const REQUEST_TIMEOUT_MS = 120000;
 
 function setCorsHeaders(res) {
@@ -47,7 +54,7 @@ export default async function handler(req, res) {
       generatedText: null,
       model: null,
       success: false,
-      error: "Only GET method is allowed. Use: GET /api/chat?prompt=your+question&model=gpt-4o"
+      error: "Only GET method is allowed"
     });
   }
 
@@ -60,16 +67,44 @@ export default async function handler(req, res) {
         generatedText: null,
         model: null,
         success: false,
-        error: "Missing 'prompt' parameter. Example: /api/chat?prompt=Hello%20world&model=gpt-4o"
+        error: "Missing 'prompt' parameter"
       });
     }
 
-    let modelId;
-    if (SUPPORTED_MODELS[model]) {
-      modelId = SUPPORTED_MODELS[model].id;
-    } else {
-      modelId = SUPPORTED_MODELS[DEFAULT_MODEL].id;
+    let modelConfig = SUPPORTED_MODELS[model];
+    if (!modelConfig) {
+      modelConfig = SUPPORTED_MODELS[DEFAULT_MODEL];
       model = DEFAULT_MODEL;
+    }
+
+    const { id: modelId, provider } = modelConfig;
+    
+    let apiUrl, apiKey;
+    
+    if (provider === 'groq') {
+      apiUrl = GROQ_API_URL;
+      apiKey = process.env.GROQ_API_KEY;
+      if (!apiKey) {
+        return jsonResponse(res, 500, {
+          status: "error",
+          generatedText: null,
+          model: model,
+          success: false,
+          error: "Missing GROQ_API_KEY environment variable"
+        });
+      }
+    } else {
+      apiUrl = OPENROUTER_API_URL;
+      apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        return jsonResponse(res, 500, {
+          status: "error",
+          generatedText: null,
+          model: model,
+          success: false,
+          error: "Missing OPENROUTER_API_KEY environment variable"
+        });
+      }
     }
 
     const systemPrompt = (system && typeof system === 'string' && system.trim()) 
@@ -81,25 +116,12 @@ export default async function handler(req, res) {
       { role: 'user', content: prompt.trim() }
     ];
 
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      console.error('[API] OPENROUTER_API_KEY is not set');
-      return jsonResponse(res, 500, {
-        status: "error",
-        generatedText: null,
-        model: model,
-        success: false,
-        error: "Server configuration error: Missing API key"
-      });
-    }
-
     const requestBody = {
       model: modelId,
       messages: messages,
       temperature: 0.7,
       top_p: 0.9,
-      frequency_penalty: 0,
-      presence_penalty: 0
+      max_tokens: 4096
     };
 
     const upstreamHeaders = {
@@ -107,13 +129,13 @@ export default async function handler(req, res) {
       'Content-Type': 'application/json',
     };
 
-    if (process.env.VERCEL_URL) {
+    if (provider !== 'groq' && process.env.VERCEL_URL) {
       upstreamHeaders['HTTP-Referer'] = `https://${process.env.VERCEL_URL}`;
       upstreamHeaders['X-Title'] = 'Discord Bot AI API';
     }
 
     const response = await fetchWithTimeout(
-      OPENROUTER_API_URL,
+      apiUrl,
       { method: 'POST', headers: upstreamHeaders, body: JSON.stringify(requestBody) },
       REQUEST_TIMEOUT_MS
     );
@@ -127,13 +149,13 @@ export default async function handler(req, res) {
         generatedText: null,
         model: model,
         success: false,
-        error: "OpenRouter returned invalid response"
+        error: `${provider.toUpperCase()} returned invalid response`
       });
     }
 
     if (!response.ok) {
-      console.error('[API] OpenRouter error:', data);
-      const errorMessage = data?.error?.message || 'OpenRouter API error';
+      console.error(`[API] ${provider} error:`, data);
+      const errorMessage = data?.error?.message || data?.error || `${provider} API error`;
       return jsonResponse(res, response.status === 402 ? 402 : 502, {
         status: "error",
         generatedText: null,
@@ -159,6 +181,7 @@ export default async function handler(req, res) {
       status: "ok",
       generatedText: reply.trim(),
       model: model,
+      provider: provider,
       success: true
     });
 
