@@ -2,7 +2,7 @@
   "name": "discord-ai-api",
   "version": "1.0.0",
   "description": "AI API for Discord Bot",
-  "main": "API/chat.js",
+  "main": "bot/chat.js",
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel deploy --prod"
