@@ -1,19 +1,19 @@
 {
   "version": 2,
   "functions": {
-    "bot/chat.js": {
+    "api/chat.js": {
       "maxDuration": 120
     }
   },
   "routes": [
     {
-      "src": "/bot/chat",
-      "dest": "/bot/chat.js",
+      "src": "/api/chat",
+      "dest": "/api/chat.js",
       "methods": ["GET", "OPTIONS"]
     },
     {
       "src": "/api/chat",
-      "dest": "/bot/chat.js",
+      "dest": "/api/chat.js",
       "methods": ["GET", "OPTIONS"]
     }
   ],
