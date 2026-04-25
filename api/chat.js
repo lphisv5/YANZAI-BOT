@@ -1,22 +1,16 @@
+// api/chat.js
 const SUPPORTED_MODELS = {
-  'gpt-4o': { id: 'openai/gpt-4o' },
-  'gpt-4-turbo': { id: 'openai/gpt-4-turbo-preview' },
-  'claude-3.5-sonnet': { id: 'anthropic/claude-3.5-sonnet' },
-  'claude-3-opus': { id: 'anthropic/claude-3-opus' },
-  'deepseek-v3.1': { id: 'deepseek/deepseek-chat-v3.1' },
-  'llama-3.3-70b': { id: 'meta-llama/llama-3.3-70b-instruct' },
-  'qwen-max': { id: 'qwen/qwen-max' },
-  'qwen-plus': { id: 'qwen/qwen-plus' },
-  'mistral-large-2411': { id: 'mistralai/mistral-large-2411' },
-  'gemini-2.0-flash': { id: 'google/gemini-2.0-flash-001' },
-  'gemini-1.5-pro': { id: 'google/gemini-1.5-pro' },
-  'command-r-plus': { id: 'cohere/command-r-plus-08-2024' },
-  'mixtral-8x22b': { id: 'mistralai/mixtral-8x22b-instruct' },
-  'grok-beta': { id: 'x-ai/grok-beta' }
+  'elephant-alpha': { id: 'openrouter/elephant-alpha' },
+  'llama-3.3-70b': { id: 'meta-llama/llama-3.3-70b-instruct:free' },
+  'gemma-4-31b': { id: 'google/gemma-4-31b-it:free' },
+  'nemotron-3-super': { id: 'nvidia/nemotron-3-super-120b-a12b:free' },
+  'gpt-oss-120b': { id: 'openai/gpt-oss-120b:free' },
+  'qwen-3.6-plus': { id: 'qwen/qwen3.6-plus-preview:free' },
+  'auto-free': { id: 'openrouter/free' }
 };
 
-const DEFAULT_MODEL = 'gpt-4o';
-const DEFAULT_SYSTEM_PROMPT = 'You are a helpful AI assistant with excellent memory and understanding. Answer clearly, accurately, and politely. Respond in the same language as the user. Provide detailed, high-quality responses.';
+const DEFAULT_MODEL = 'auto-free';
+const DEFAULT_SYSTEM_PROMPT = 'You are a helpful AI assistant. Answer clearly, accurately, and politely. Respond in the same language as the user. Provide detailed, high-quality responses.';
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const REQUEST_TIMEOUT_MS = 120000;
 
