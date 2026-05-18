@@ -1,6 +1,6 @@
 {
   "name": "discord-ai-api",
-  "version": "1.0.0",
+  "version": "1.9.1",
   "description": "AI API for Discord Bot",
   "main": "api/chat.js",
   "scripts": {
